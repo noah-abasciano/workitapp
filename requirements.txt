@@ -1,0 +1,8 @@
+flask
+requests
+pandas
+numpy
+sqlalchemy
+streamlit
+sqlite3
+streamlit
