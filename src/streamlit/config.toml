@@ -1,0 +1,9 @@
+[sidebar]
+title = "Main Menu"
+items = [
+    {name = "Home", module = "home", function = "show", icon = "house"},
+    {name = "Your Stats", module = "your_stats", function = "show", icon = "bar-chart"},
+    {name = "Tracking Log", module = "tracking_log", function = "show", icon = "calendar"},
+    {name = "Schedule", module = "schedule", function = "show", icon = "clock"},
+    {name = "Exercise Tutorial Links", module = "exercise_tutorial_links", function = "show", icon = "link"}
+]
