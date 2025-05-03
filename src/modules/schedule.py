@@ -1,65 +1,74 @@
-#!/usr/bin/env python3
-# Import necessary libraries
 import streamlit as st
 import pandas as pd
 import datetime
 from modules.home import init_user_profile
 import modules.db_utilize as dbstuff
 import seaborn as sns
-
-#Function to initialize the schedule
-def init_schedule():
-    user_info = dbstuff.fetch_user_profile()
-    if not user_info:
-        init_user_profile()
-    
-    if st.button("Create Schedule"):
-        #Initialize the schedule dataframe
-        weights = []
-        days = []
-
-        #Initialize the starting variables
-        workdate = datetime.date.today()
-        projected_weight = user_info[0][2]  # Start weight
-        goal_weight = user_info[0][3] # Goal weight
-
-        #Phase variables
-        weight_loss_phase = True
-        weight_loss_rate = 0.01/7*projected_weight
-        ct = 0
-
-        #Create a periodized schedule to reach goal weight
-        while projected_weight > goal_weight:
-
-            #Increment the schedule components
-            workdate += datetime.timedelta(days=1)
-            projected_weight -= weight_loss_rate
-            weights.append(projected_weight)
-            days.append(workdate)
-             
-            #Change the phase if 70 days have passed
-            if ct == 70:
-                weight_loss_phase = not weight_loss_phase
-                #Check the rate
-                weight_loss_rate = projected_weight*0.01/7 if weight_loss_phase else 0
-                ct = 0
-            ct += 1
-        
-        schedule_df = pd.DataFrame({"Schedule Date": days, "Projected Weight": weights})
-        schedule_df["Upper Bound"] = schedule_df["Projected Weight"].apply(lambda x: x + x*0.01)
-        schedule_df["Lower Bound"] = schedule_df["Projected Weight"].apply(lambda x: x - x*0.01)
-
-        #Display the schedule
-        st.subheader("Schedule")
-        st.write("This is your schedule to reach your goal weight.")
-        st.dataframe(schedule_df, hide_index=True)
-        for row in schedule_df.iterrows():
-            dbstuff.update_schedule_data(user_info[0][0], row[1]["Schedule Date"], row[1]["Projected Weight"], row[1]["Upper Bound"], row[1]["Lower Bound"])
-        st.success("Schedule created successfully!")
-        st.balloons()
+import matplotlib.pyplot as plt
             
-def schedule():
-    st.title("Schedule")
-    st.write("This page will display the schedule.")
-    
 
+def schedule():
+    st.subheader("Today's Target Weight")
+    schedule_data = dbstuff.fetch_schedule_data()
+    schedule_df = pd.DataFrame(schedule_data, columns=["ID", "User ID", "Schedule Date", "Projected Weight", "Upper Bound", "Lower Bound", "Phase"])
+    schedule_df = schedule_df.drop(columns=["ID", "User ID"])  # Drop the ID and User ID columns if not needed
+    
+    #Display today's stats
+    schedule_df["Schedule Date"] = pd.to_datetime(schedule_df["Schedule Date"]).dt.date  # Convert to datetime
+    today = datetime.date.today()  # Get today's date as a datetime.date object
+    
+    #Use boolean indexing to filter the DataFrame for today's date
+    today_schedule = schedule_df[schedule_df["Schedule Date"] == today]
+    if not today_schedule.empty:
+        st.write(f"Today's Target Weight: {today_schedule['Projected Weight'].values[0]}")
+
+    # Display the filtered DataFrame
+    filtered_schedule = schedule_df
+
+    # Create a container for the buttons
+    with st.container():
+        # Create a custom number of buttons for the user to select
+        button_count = max(schedule_df["Phase"])  # Get the maximum phase number
+
+        # Create columns for the buttons
+        columns = st.columns(button_count)
+
+        for ct in range(button_count):
+            ct_out = f"Phase {ct}" if ct > 0 else f"Full Schedule"
+            with columns[ct]:
+                # Create a button for each phase
+                phase_button = st.button(f"{ct_out}", key=f"phase_{ct}")
+                
+                if phase_button:
+                    # Filter the DataFrame based on the selected phase
+                    filtered_schedule = schedule_df[schedule_df["Phase"] == ct] if ct > 0 else schedule_df
+
+        ct += 1 
+
+    # Display the schedule as a table
+    st.subheader("Schedule")
+    sns.set_theme(style="whitegrid")
+    
+    # Create a matplotlib figure
+    plt.figure(figsize=(12, 6))
+    
+    # Add Seaborn line plots
+    sns.lineplot(data=filtered_schedule, x="Schedule Date", y="Projected Weight", label="Projected Weight")
+    sns.lineplot(data=filtered_schedule, x="Schedule Date", y="Upper Bound", label="Upper Bound")
+    sns.lineplot(data=filtered_schedule, x="Schedule Date", y="Lower Bound", label="Lower Bound")
+    
+    # Add a vertical line for today's date
+    if min(filtered_schedule["Schedule Date"]) <= today <= max(filtered_schedule["Schedule Date"]):
+        plt.axvline(x=today, color='black', linestyle='--', label="Today's Date")
+    
+    # Add labels and title
+    plt.xlabel("Schedule Date")
+    plt.ylabel("Weight")
+    plt.title("Projected Weight Schedule")
+    plt.legend()
+    
+    # Display the plot in Streamlit
+    st.pyplot(plt)
+
+    st.subheader("Schedule Data")
+    st.dataframe(filtered_schedule, hide_index=True)  # Display the filtered schedule as a table

@@ -57,13 +57,24 @@ def update_workout_data(user_id, exercise_id, date, sets, reps):
     conn.commit()
     conn.close()
 
-def update_schedule_data(user_id, date, projected_weight, upper_bound, lower_bound):
+def clear_schedule_data(user_id):
     # Connect to the SQLite database
     conn = sqlite3.connect('workit.db')
     c = conn.cursor()
+    #Clear the schedule data from the database.
+    c.execute('''DELETE FROM schedule WHERE user_id=?''', (user_id,))
+    conn.commit()
+    conn.close()
+
+def update_schedule_data(user_id, date, projected_weight, upper_bound, lower_bound, phase):
+    # Connect to the SQLite database
+    conn = sqlite3.connect('workit.db')
+    c = conn.cursor()
+   
     #Update the schedule data in the database.
-    c.execute('''UPDATE schedule SET projected_weight=?, upper_bound=?, lower_bound=? WHERE user_id=? AND date=?''',
-              (projected_weight, upper_bound, lower_bound, user_id, date))
+    c.execute('''
+        INSERT INTO schedule (user_id, date, projected_weight, upper_bound, lower_bound, phase) VALUES (?, ?, ?, ?, ?, ?)''',
+        (user_id, date, projected_weight, upper_bound, lower_bound, phase))
     conn.commit()
     conn.close()
 

@@ -61,6 +61,7 @@ def initiate_db():
                 projected_weight REAL NOT NULL,
                 upper_bound REAL NOT NULL,
                 lower_bound REAL NOT NULL,
+                phase INTEGER NOT NULL,
                 FOREIGN KEY (date) REFERENCES dayly (date)
             )
         ''')
