@@ -42,7 +42,7 @@ def update_daily_tracking_data(user_id, date, weight, calories, steps, workout):
     conn = sqlite3.connect('workit.db')
     c = conn.cursor()
     #Update the daily tracking data in the database.
-    c.execute('''UPDATE dayly SET weight=?, calories=?, steps=?, workout=? WHERE user_id=? AND date=?''',
+    c.execute('''INSERT dayly SET weight=?, calories=?, steps=?, workout=? WHERE user_id=? AND date=?''',
               (weight, calories, steps, workout, user_id, date))
     conn.commit()
     conn

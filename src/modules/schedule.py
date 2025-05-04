@@ -20,7 +20,7 @@ def schedule():
     #Use boolean indexing to filter the DataFrame for today's date
     today_schedule = schedule_df[schedule_df["Schedule Date"] == today]
     if not today_schedule.empty:
-        st.write(f"Today's Target Weight: {today_schedule['Projected Weight'].values[0]}")
+        st.dataframe(today_schedule, hide_index=True)  # Display today's schedule as a table
 
     # Display the filtered DataFrame
     filtered_schedule = schedule_df
@@ -60,7 +60,7 @@ def schedule():
     # Add a vertical line for today's date
     if min(filtered_schedule["Schedule Date"]) <= today <= max(filtered_schedule["Schedule Date"]):
         plt.axvline(x=today, color='black', linestyle='--', label="Today's Date")
-    
+
     # Add labels and title
     plt.xlabel("Schedule Date")
     plt.ylabel("Weight")
